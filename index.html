@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>NutritionZ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Chart.js per il grafico a torta -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #1f2937, #020617);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .app {
+      max-width: 960px;
+      width: 100%;
+      padding: 1.5rem;
+      padding-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      margin-bottom: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0.75rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      margin-bottom: 0.2rem;
+      color: var(--muted);
+    }
+
+    input,
+    select,
+    textarea {
+      padding: 0.5rem 0.6rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: #020617;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 1px solid var(--primary);
+      border-color: var(--primary);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .inline-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 1rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      background: linear-gradient(135deg, #2563eb, #22c55e);
+      color: white;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      margin-top: 0.5rem;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      box-shadow: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(37, 99, 235, 0.5);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+    }
+
+    .results-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.75rem;
+    }
+
+    .pill {
+      padding: 0.4rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .pill span.value {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .pill span.label {
+      color: var(--muted);
+    }
+
+    .section-title {
+      font-size: 1rem;
+      margin-bottom: 0.4rem;
+      margin-top: 0.3rem;
+    }
+
+    .note {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    .highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+
+    .output-block {
+      background: #020617;
+      border-radius: 0.8rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      margin-top: 0.6rem;
+    }
+
+    .output-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+
+    .output-line {
+      font-size: 0.85rem;
+      margin: 0.1rem 0;
+    }
+
+    .output-emph {
+      font-weight: 600;
+    }
+
+    .two-cols {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    /* layout Focus micronutrienti + Suggerimenti integrazione affiancati */
+    .micro-supp-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2.3fr);
+      gap: 0.8rem;
+      margin-top: 0.6rem;
+      align-items: stretch;
+    }
+
+    canvas {
+      background: #020617;
+      border-radius: 0.8rem;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 0.5rem;
+    }
+
+    .disclaimer {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.8rem;
+      border-top: 1px dashed rgba(148, 163, 184, 0.4);
+      padding-top: 0.5rem;
+    }
+
+    .checkbox-group label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-right: 0.75rem;
+      margin-top: 0.25rem;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+
+    /* --- Migliorie UI per calorie & macro --- */
+    .calorie-target-line {
+      margin: 0.25rem 0 0.4rem 0;
+      font-size: 0.9rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .kcal-target {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .kcal-pill {
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.8rem;
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .kcal-pill.kcal-rest {
+      border-color: #38bdf8;
+      color: #7dd3fc;
+    }
+
+    .kcal-pill.kcal-training {
+      border-color: #fbbf24;
+      color: #fde68a;
+    }
+
+    .macro-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+    }
+
+    .macro-item {
+      border-radius: 0.6rem;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 0.45rem 0.6rem;
+      background: rgba(15, 23, 42, 0.85);
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease,
+        box-shadow 0.15s ease, transform 0.1s ease;
+    }
+
+    .macro-item:hover {
+      border-color: var(--primary);
+      background-color: rgba(30, 64, 175, 0.45);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .macro-item-active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.7);
+      background-color: rgba(22, 163, 74, 0.3);
+    }
+
+    .macro-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.1rem;
+    }
+
+    .macro-values {
+      font-size: 0.8rem;
+      display: flex;
+      gap: 0.35rem;
+      align-items: baseline;
+    }
+
+    .macro-grams {
+      font-weight: 600;
+    }
+
+    .macro-kcal {
+      color: var(--muted);
+    }
+
+    .macro-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+
+    .macro-protein .macro-label {
+      color: #4ade80;
+    }
+
+    .macro-fat .macro-label {
+      color: #fdba74;
+    }
+
+    .macro-carb .macro-label {
+      color: #60a5fa;
+    }
+
+    /* Allenamento – settimana tipo + micro-animazioni, sezione dedicata */
+    .training-section-title {
+      margin-top: 1.2rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.45);
+    }
+
+    .training-section {
+      margin-top: 0.6rem;
+    }
+
+    .training-week {
+      margin-top: 0.5rem;
+    }
+
+    .training-intro-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    .training-day {
+      margin-top: 0.45rem;
+      padding: 0.55rem 0.6rem;
+      border-radius: 0.7rem;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .training-day-header {
+      font-size: 0.86rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .exercise-item {
+      margin-top: 0.28rem;
+      padding: 0.35rem 0.45rem;
+      border-radius: 0.55rem;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.95);
+      transition: transform 0.15s ease, box-shadow 0.15s ease,
+        border-color 0.15s ease, background-color 0.15s ease;
+      cursor: default;
+    }
+
+    .exercise-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.8);
+      border-color: var(--primary);
+      background-color: rgba(30, 64, 175, 0.4);
+    }
+
+    .exercise-name {
+      font-size: 0.84rem;
+      font-weight: 600;
+      margin-bottom: 0.08rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .exercise-name a {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+    }
+
+    .exercise-name a:hover {
+      text-decoration-style: solid;
+    }
+
+    .exercise-animated-icon {
+      display: inline-block;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .exercise-item:hover .exercise-animated-icon {
+      transform: scale(1.15) translateY(-1px);
+      box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.7);
+    }
+
+    .exercise-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .exercise-description {
+      font-size: 0.78rem;
+      margin-top: 0.08rem;
+    }
+
+    .exercise-weight-hint {
+      font-size: 0.78rem;
+      margin-top: 0.1rem;
+      color: var(--muted);
+    }
+
+    /* Dieta – sezione dedicata, settimana tipo con giorni e grammature */
+    .diet-section-title {
+      margin-top: 1.2rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.45);
+    }
+
+    .diet-section {
+      margin-top: 0.6rem;
+    }
+
+    .diet-day {
+      margin-top: 0.8rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .diet-day-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin: 0.4rem 0 0.3rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border-left: 3px solid var(--primary);
+      display: inline-block;
+    }
+
+    .diet-meal-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-top: 0.2rem;
+    }
+
+    .diet-food {
+      font-size: 0.8rem;
+      margin-left: 0.6rem;
+    }
+
+    /* Nuove classi: supplementi e filtri giorno */
+    .supplement-item {
+      font-size: 0.8rem;
+      margin-top: 0.4rem;
+      padding-top: 0.35rem;
+      border-top: 1px dashed rgba(148, 163, 184, 0.35);
+    }
+
+    .supplement-name {
+      font-weight: 600;
+      margin-bottom: 0.05rem;
+    }
+
+    .day-filter {
+      margin-top: 0.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .day-filter label {
+      margin-bottom: 0;
+      font-size: 0.82rem;
+    }
+
+    .day-filter select {
+      max-width: 200px;
+    }
+
+    /* Barra di navigazione mobile tipo app */
+    .mobile-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at top, #0b1220, #020617);
+      border-top: 1px solid rgba(148, 163, 184, 0.4);
+      padding: 0.4rem 0.6rem;
+      display: none;
+      justify-content: space-around;
+      gap: 0.4rem;
+      z-index: 50;
+    }
+
+    .mobile-nav-btn {
+      flex: 1;
+      max-width: 160px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text);
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease,
+        box-shadow 0.15s ease;
+    }
+
+    .mobile-nav-btn span.icon {
+      font-size: 0.9rem;
+    }
+
+    .mobile-nav-btn span.label {
+      white-space: nowrap;
+    }
+
+    .mobile-nav-btn:active {
+      transform: translateY(1px);
+      background: rgba(37, 99, 235, 0.35);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.6);
+    }
+
+    @media (max-width: 720px) {
+      body {
+        align-items: stretch;
+      }
+
+      .app {
+        padding: 0.9rem 0.75rem 3.5rem; /* spazio per la nav mobile */
+      }
+
+      .card {
+        padding: 1.1rem 0.9rem;
+        border-radius: 0.9rem;
+      }
+
+      .two-cols {
+        grid-template-columns: 1fr;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .results-row {
+        flex-direction: column;
+      }
+
+      .mobile-nav {
+        display: flex;
+      }
+
+      .micro-supp-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card" id="inputCard">
+      <h1>NutritionZ – Calcolatore Fabbisogno & Macro</h1>
+      <div class="subtitle">
+        Inserisci i tuoi dati, scegli l'obiettivo e ottieni con NutritionZ calorie, macro e linee guida di allenamento personalizzate.
+      </div>
+
+      <!-- SCHERMATA 1: INPUT -->
+      <form id="inputForm">
+        <div class="grid">
+          <div class="field">
+            <label for="sex">Sesso</label>
+            <select id="sex" required>
+              <option value="M">Maschio</option>
+              <option value="F">Femmina</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="age">Età (anni)</label>
+            <input
+              id="age"
+              type="number"
+              min="14"
+              max="90"
+              step="1"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="height">Altezza (cm)</label>
+            <input
+              id="height"
+              type="number"
+              min="120"
+              max="230"
+              step="0.5"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="weight">Peso (kg)</label>
+            <input
+              id="weight"
+              type="number"
+              min="35"
+              max="220"
+              step="0.1"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="activity">Attività fisica (PAL)</label>
+            <select id="activity" required>
+              <option value="1.2">
+                Sedentario (1.2 – 0–1 allenamenti/settimana)
+              </option>
+              <option value="1.375">
+                Leggero (1.375 – 1–2 allenamenti/settimana)
+              </option>
+              <option value="1.55">
+                Moderato (1.55 – 3–4 allenamenti/settimana)
+              </option>
+              <option value="1.725">
+                Attivo (1.725 – 4–5 allenamenti/settimana)
+              </option>
+              <option value="1.9">
+                Molto attivo (1.9 – 6–7 allenamenti/settimana)
+              </option>
+            </select>
+            <div class="inline-note">
+              Basato su linee guida standard per PAL (sedentario → molto attivo) e numero indicativo di allenamenti settimanali.
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="bodyFat">% massa grassa (opzionale)</label>
+            <input
+              id="bodyFat"
+              type="number"
+              min="3"
+              max="60"
+              step="0.1"
+              placeholder="Es. 15"
+            />
+            <div class="inline-note">
+              Usato per Katch-McArdle (più preciso se sei molto allenato).
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn">Calcola metabolismo basale</button>
+      </form>
+
+      <!-- RISULTATI BMR -->
+      <div id="bmrSection" style="display: none; margin-top: 1rem">
+        <div class="section-title">Metabolismo basale (BMR)</div>
+        <div class="results-row" id="bmrResults"></div>
+
+        <div class="note">
+          In generale Mifflin-St Jeor è adatta alla popolazione generale, mentre
+          Katch-McArdle è più indicata quando hai una stima affidabile della
+          percentuale di massa grassa.
+        </div>
+
+        <div class="grid" style="margin-top: 0.75rem">
+          <div class="field">
+            <label for="bmrChoice">Formula da usare per il TDEE</label>
+            <select id="bmrChoice"></select>
+            <div class="inline-note">
+              Puoi usare una singola formula o la media delle tre disponibili.
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="goal">Obiettivo</label>
+            <select id="goal" required>
+              <option value="bulk">Aumento massa muscolare</option>
+              <option value="cut">Riduzione massa grassa</option>
+              <option value="maintain">Mantenimento</option>
+              <option value="recomp">Ricomposizione corporea</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="calcPlan" class="btn">Genera piano giornaliero</button>
+      </div>
+    </div>
+
+    <!-- SCHERMATA 2: OUTPUT -->
+    <div class="card" id="outputCard" style="display: none">
+      <div class="two-cols">
+        <div>
+          <div class="section-title">Calorie & macronutrienti</div>
+
+          <div class="output-block" id="calorieBlock"></div>
+          <div class="output-block" id="macroBlock"></div>
+
+          <div class="micro-supp-grid">
+            <div class="output-block" id="microBlock"></div>
+            <div class="output-block" id="supplementsBlock" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">Distribuzione macro (grafico)</div>
+          <canvas id="macroChart" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- SEZIONE ALLENAMENTO CONSIGLIATO -->
+      <div class="section-title training-section-title">
+        Allenamento consigliato
+      </div>
+
+      <div class="field day-filter">
+        <label for="trainingDayFilter">Mostra giorno allenamento</label>
+        <select id="trainingDayFilter">
+          <option value="all">Tutti i giorni</option>
+          <option value="lunedi">Lunedì</option>
+          <option value="martedi">Martedì</option>
+          <option value="giovedi">Giovedì</option>
+          <option value="venerdi">Venerdì</option>
+        </select>
+      </div>
+
+      <div class="output-block training-section" id="trainingBlock"></div>
+
+      <!-- SEZIONE: DIETA SETTIMANALE PERSONALIZZATA -->
+      <div class="section-title" style="margin-top: 1.2rem">
+        Personalizzazione dieta settimanale
+      </div>
+      <div class="output-block" id="dietQuestionsBlock">
+        <div class="output-title">Domande rapide sulle tue abitudini</div>
+
+        <div class="field">
+          <label for="mealStructure">Quanti pasti principali fai al giorno di solito?</label>
+          <select id="mealStructure">
+            <option value="2">2 pasti</option>
+            <option value="3" selected>3 pasti</option>
+            <option value="4plus">4 o più pasti</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="breakfastType">Come gestisci la colazione?</label>
+          <select id="breakfastType">
+            <option value="caffe">Bevo solo un caffè</option>
+            <option value="leggera" selected>Colazione leggera</option>
+            <option value="abbondante">Colazione abbondante</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="cookingTime">Quanto tempo hai/vuoi dedicare alla cucina ogni giorno?</label>
+          <select id="cookingTime">
+            <option value="veloce" selected>Preferisco piatti molto veloci e semplici da preparare</option>
+            <option value="medio">Posso dedicare un po’ di tempo alla cucina (ricette semplici)</option>
+            <option value="alto">Mi piace cucinare, ok anche ricette più elaborate</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Hai preferenze o restrizioni alimentari?</label>
+          <div class="inline-note">Puoi selezionare più opzioni.</div>
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" class="dietPref" value="onnivoro" checked />
+              Onnivoro
+            </label>
+            <label>
+              <input type="checkbox" class="dietPref" value="vegetariano" />
+              Vegetariano
+            </label>
+            <label>
+              <input type="checkbox" class="dietPref" value="vegano" />
+              Vegano
+            </label>
+            <label>
+              <input type="checkbox" class="dietPref" value="senza_lattosio" />
+              Senza lattosio
+            </label>
+            <label>
+              <input type="checkbox" class="dietPref" value="senza_glutine" />
+              Senza glutine
+            </label>
+            <label>
+              <input type="checkbox" class="dietPref" value="altro" />
+              Altre intolleranze/allergie
+            </label>
+          </div>
+          <input
+            id="dietOtherText"
+            type="text"
+            placeholder="Specifica eventuali intolleranze/allergie"
+            style="margin-top: 0.4rem;"
+          />
+        </div>
+
+        <div class="field">
+          <label for="budget">Budget alimentare</label>
+          <select id="budget">
+            <option value="contenuto" selected>Ho un budget contenuto</option>
+            <option value="flessibile">Sono abbastanza flessibile sul costo giornaliero</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="dislikedFoods">Ci sono cibi che non ti piacciono o non vuoi includere?</label>
+          <textarea
+            id="dislikedFoods"
+            placeholder="Es. non voglio pesce, odio i legumi, ecc."
+          ></textarea>
+        </div>
+
+        <div class="field">
+          <label for="trainingTime">In quali orari ti alleni di solito?</label>
+          <select id="trainingTime">
+            <option value="mattina">Mattina</option>
+            <option value="pomeriggio">Pomeriggio</option>
+            <option value="sera" selected>Sera</option>
+            <option value="varia">Varia in base ai giorni</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="trainingDays">Quanti giorni a settimana ti alleni?</label>
+          <select id="trainingDays">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn" id="generateDietBtn">
+          Genera esempio di dieta settimanale
+        </button>
+      </div>
+
+      <div
+        class="section-title diet-section-title"
+        id="dietExampleTitle"
+        style="display: none;"
+      >
+        Esempio di dieta settimanale – settimana tipo
+      </div>
+
+      <div class="field day-filter" id="dietDayFilterContainer" style="display:none;">
+        <label for="dietDayFilter">Mostra giorno dieta</label>
+        <select id="dietDayFilter">
+          <option value="all">Tutti i giorni</option>
+          <option value="lunedi">Lunedì</option>
+          <option value="martedi">Martedì</option>
+          <option value="giovedi">Giovedì</option>
+          <option value="venerdi">Venerdì</option>
+        </select>
+      </div>
+
+      <div
+        class="output-block diet-section"
+        id="dietExampleBlock"
+        style="display: none; margin-top: 0.6rem;"
+      ></div>
+
+      <div style="margin-top: 0.6rem">
+        <button id="exportPdf" class="btn secondary">
+          Esporta piano (bozza PDF)
+        </button>
+      </div>
+
+      <div class="disclaimer">
+        NutritionZ non sostituisce il parere di un medico o nutrizionista.
+        Consulta un professionista prima di intraprendere cambiamenti
+        significativi a dieta o allenamento.
+      </div>
+    </div>
+
+    <!-- Navbar mobile tipo app -->
+    <div class="mobile-nav">
+      <button class="mobile-nav-btn" data-target="inputCard">
+        <span class="icon">⚙️</span>
+        <span class="label">Dati</span>
+      </button>
+      <button class="mobile-nav-btn" data-target="outputCard">
+        <span class="icon">📊</span>
+        <span class="label">Piano</span>
+      </button>
+      <button class="mobile-nav-btn" data-target="dietQuestionsBlock">
+        <span class="icon">🍽️</span>
+        <span class="label">Dieta</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // --- Utilità numeriche
+    const round = (val, digits = 0) =>
+      Math.round(val * 10 ** digits) / 10 ** digits;
+
+    const clamp = (val, min, max) =>
+      Math.max(min, Math.min(max, val));
+
+    // Colori base e highlight per grafico macro
+    const macroBaseColors = ["#22c55e", "#f97316", "#3b82f6"];
+    const macroHighlightColors = ["#4ade80", "#fdba74", "#60a5fa"];
+
+    // --- Formule BMR
+    function mifflinStJeor(weight, height, age, sex) {
+      // peso kg, altezza cm, età anni
+      if (sex === "M") {
+        return 10 * weight + 6.25 * height - 5 * age + 5;
+      }
+      return 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+
+    function harrisBenedictRevised(weight, height, age, sex) {
+      if (sex === "M") {
+        return 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age;
+      }
+      return 447.593 + 9.247 * weight + 3.098 * height - 4.33 * age;
+    }
+
+    function katchMcArdle(weight, bodyFatPercent) {
+      const bf = bodyFatPercent / 100;
+      const leanMass = weight * (1 - bf);
+      return 370 + 21.6 * leanMass;
+    }
+
+    // --- Training suggestion
+    function trainingAdvice(goal) {
+      switch (goal) {
+        case "bulk":
+          return (
+            "4–5 sessioni a settimana focalizzate su ipertrofia: " +
+            "10–20 serie per gruppo muscolare a settimana, range 6–12 ripetizioni, " +
+            "progressive overload e priorità su multiarticolari."
+          );
+        case "cut":
+          return (
+            "3–4 sessioni pesi per mantenere forza (6–10 ripetizioni) " +
+            "+ 2 giorni di cardio (LISS o HIIT), più NEAT alto (camminate, scale)."
+          );
+        case "maintain":
+          return (
+            "3–4 allenamenti full body o upper/lower a volume moderato, " +
+            "intensità medio-alta; obiettivo steps giornalieri intorno ai 10.000."
+          );
+        case "recomp":
+          return (
+            "Ciclo giorni heavy (forza 3–5 ripetizioni, carbo più alti) " +
+            "e giorni leggeri con cardio/moderato e carbo ridotti; " +
+            "focus su progressione di carico e buona tecnica."
+          );
+        default:
+          return "";
+      }
+    }
+
+    // --- Stima pesi consigliati per multiarticolari
+    function getRecommendedWeightRange(group) {
+      if (!lastInputs) {
+        return { min: 0, max: 0 };
+      }
+      const bw = lastInputs.weight || 0;
+      let base = bw * 0.5; // default upper
+      if (group === "lower") base = bw * 0.8;
+      if (group === "lowerHeavy") base = bw * 0.9;
+
+      let modifier = 1;
+
+      // Età: range leggermente più basso dopo i 40/50
+      if (lastInputs.age >= 50) {
+        modifier *= 0.85;
+      } else if (lastInputs.age >= 40) {
+        modifier *= 0.9;
+      }
+
+      // Massa grassa elevata → riduco un po' il range
+      if (lastInputs.bodyFat) {
+        const bf = lastInputs.bodyFat;
+        const isHighBfMale = lastInputs.sex === "M" && bf > 25;
+        const isHighBfFemale = lastInputs.sex === "F" && bf > 32;
+        if (isHighBfMale || isHighBfFemale) {
+          modifier *= 0.85;
+        }
+      }
+
+      const min = round(base * 0.6 * modifier, 0);
+      const max = round(base * 0.8 * modifier, 0);
+
+      return {
+        min: min > 0 ? min : 0,
+        max: max > 0 ? max : 0
+      };
+    }
+
+    // --- Stato globale semplice
+    let currentMacroChart = null;
+    let lastInputs = null; // per eventuale export
+    let lastPlan = null; // per esempio dieta settimanale
+
+    // --- Macro & grafico: hover collegato ---
+    function highlightMacroSlice(index, el) {
+      if (!currentMacroChart) return;
+      const dataset = currentMacroChart.data.datasets[0];
+      dataset.backgroundColor = macroBaseColors.map((c, i) =>
+        i === index ? macroHighlightColors[i] : c
+      );
+      currentMacroChart.update();
+      el.classList.add("macro-item-active");
+    }
+
+    function resetMacroSlice(el) {
+      if (!currentMacroChart) return;
+      const dataset = currentMacroChart.data.datasets[0];
+      dataset.backgroundColor = macroBaseColors.slice();
+      currentMacroChart.update();
+      el.classList.remove("macro-item-active");
+    }
+
+    function setupMacroHover() {
+      const items = document.querySelectorAll(".macro-item");
+      if (!currentMacroChart || !items.length) return;
+
+      items.forEach((item) => {
+        const idx = parseInt(item.dataset.macroIndex, 10);
+        if (Number.isNaN(idx)) return;
+
+        item.onmouseenter = () => highlightMacroSlice(idx, item);
+        item.onmouseleave = () => resetMacroSlice(item);
+      });
+    }
+
+    // --- Gestione form input
+    const form = document.getElementById("inputForm");
+    const bmrSection = document.getElementById("bmrSection");
+    const bmrResultsDiv = document.getElementById("bmrResults");
+    const bmrChoiceSelect = document.getElementById("bmrChoice");
+    const calcPlanBtn = document.getElementById("calcPlan");
+    const outputCard = document.getElementById("outputCard");
+    const calorieBlock = document.getElementById("calorieBlock");
+    const macroBlock = document.getElementById("macroBlock");
+    const microBlock = document.getElementById("microBlock");
+    const supplementsBlock = document.getElementById("supplementsBlock");
+    const trainingBlock = document.getElementById("trainingBlock");
+    const exportPdfBtn = document.getElementById("exportPdf");
+    const dietExampleBlock = document.getElementById("dietExampleBlock");
+    const dietExampleTitle = document.getElementById("dietExampleTitle");
+    const generateDietBtn = document.getElementById("generateDietBtn");
+    const trainingDayFilter = document.getElementById("trainingDayFilter");
+    const dietDayFilter = document.getElementById("dietDayFilter");
+    const dietDayFilterContainer = document.getElementById("dietDayFilterContainer");
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const sex = document.getElementById("sex").value;
+      const age = parseFloat(document.getElementById("age").value);
+      const height = parseFloat(document.getElementById("height").value);
+      const weight = parseFloat(document.getElementById("weight").value);
+      const activity = parseFloat(document.getElementById("activity").value);
+      const bodyFatStr = document.getElementById("bodyFat").value.trim();
+      const bodyFat = bodyFatStr ? parseFloat(bodyFatStr) : null;
+
+      if (!weight || !height || !age || !sex) return;
+
+      const bmrMifflin = mifflinStJeor(weight, height, age, sex);
+      const bmrHarris = harrisBenedictRevised(weight, height, age, sex);
+      const hasKatch = bodyFat && bodyFat > 0 && bodyFat < 70;
+      const bmrKatch = hasKatch ? katchMcArdle(weight, bodyFat) : null;
+
+      // Popola risultati BMR
+      bmrResultsDiv.innerHTML = "";
+
+      const pills = [];
+
+      pills.push({
+        label: "Mifflin-St Jeor",
+        value: bmrMifflin,
+        note: "Buon compromesso per popolazione generale."
+      });
+
+      pills.push({
+        label: "Harris-Benedict (rivista)",
+        value: bmrHarris,
+        note: "Storica, leggermente più alta in media."
+      });
+
+      if (hasKatch) {
+        pills.push({
+          label: "Katch-McArdle",
+          value: bmrKatch,
+          note: "Migliore se hai una stima precisa della % di grasso."
+        });
+      }
+
+      pills.forEach((p) => {
+        const el = document.createElement("div");
+        el.className = "pill";
+        el.innerHTML = `
+          <span class="label">${p.label}:</span>
+          <span class="value">${round(p.value, 0)} kcal</span>
+        `;
+        el.title = p.note;
+        bmrResultsDiv.appendChild(el);
+      });
+
+      // Popola select formula scelta
+      bmrChoiceSelect.innerHTML = "";
+      const optM = new Option(
+        `Mifflin-St Jeor (${round(bmrMifflin, 0)} kcal)`,
+        "mifflin"
+      );
+      const optH = new Option(
+        `Harris-Benedict (${round(bmrHarris, 0)} kcal)`,
+        "harris"
+      );
+      bmrChoiceSelect.add(optM);
+      bmrChoiceSelect.add(optH);
+
+      if (hasKatch) {
+        const optK = new Option(
+          `Katch-McArdle (${round(bmrKatch, 0)} kcal)`,
+          "katch"
+        );
+        bmrChoiceSelect.add(optK);
+      }
+
+      const avg =
+        (bmrMifflin + bmrHarris + (hasKatch ? bmrKatch : 0)) /
+        (hasKatch ? 3 : 2);
+      const optAvg = new Option(
+        `Media formule (${round(avg, 0)} kcal)`,
+        "avg"
+      );
+      bmrChoiceSelect.add(optAvg);
+
+      // Salva ultimi input per uso successivo
+      lastInputs = {
+        sex,
+        age,
+        height,
+        weight,
+        activity,
+        bodyFat: bodyFat || null,
+        bmrMifflin,
+        bmrHarris,
+        bmrKatch: hasKatch ? bmrKatch : null,
+        bmrAvg: avg
+      };
+
+      bmrSection.style.display = "block";
+      outputCard.style.display = "none";
+      dietExampleBlock.style.display = "none";
+      dietExampleBlock.innerHTML = "";
+      if (dietExampleTitle) {
+        dietExampleTitle.style.display = "none";
+      }
+      if (dietDayFilterContainer) {
+        dietDayFilterContainer.style.display = "none";
+      }
+
+      // Scroll automatico alla parte BMR su mobile
+      bmrSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // --- Genera piano in base all'obiettivo
+    calcPlanBtn.addEventListener("click", () => {
+      if (!lastInputs) return;
+
+      const choice = bmrChoiceSelect.value;
+      const goal = document.getElementById("goal").value;
+
+      let baseBmr = lastInputs.bmrMifflin;
+      if (choice === "harris") baseBmr = lastInputs.bmrHarris;
+      else if (choice === "katch" && lastInputs.bmrKatch)
+        baseBmr = lastInputs.bmrKatch;
+      else if (choice === "avg") baseBmr = lastInputs.bmrAvg;
+
+      const pal = lastInputs.activity;
+      const tdee = baseBmr * pal;
+
+      let targetLow = tdee;
+      let targetHigh = tdee;
+      let description = "";
+
+      switch (goal) {
+        case "bulk":
+          targetLow = tdee * 1.1;
+          targetHigh = tdee * 1.15;
+          description =
+            "Surplus moderato (+10–15%): utile per aumentare la massa limitando il grasso.";
+          break;
+        case "cut":
+          targetLow = tdee * 0.8;
+          targetHigh = tdee * 0.85;
+          description =
+            "Deficit controllato (−15–20%): sostenibile nel medio periodo.";
+          break;
+        case "maintain":
+          targetLow = tdee;
+          targetHigh = tdee;
+          description =
+            "Mantenimento: stabilità di peso, focus su performance e composizione.";
+          break;
+        case "recomp":
+          // uso TDEE ±10% per on/off giorni training
+          targetLow = tdee * 0.9;
+          targetHigh = tdee * 1.1;
+          description =
+            "Ricomposizione: alternanza leggera di surplus/deficit in base ai giorni di allenamento.";
+          break;
+      }
+
+      // Calorie di riferimento per macro e target evidenziato
+      const refKcal =
+        goal === "recomp" ? tdee : (targetLow + targetHigh) / 2 || tdee;
+
+      // Calorie per output
+      const kcalLine =
+        goal === "recomp"
+          ? `Giorni rest ≈ ${round(targetLow)} kcal, giorni training ≈ ${round(
+              targetHigh
+            )} kcal`
+          : targetLow === targetHigh
+          ? `Target ≈ ${round(targetLow)} kcal/die`
+          : `Range consigliato ≈ ${round(targetLow)}–${round(
+              targetHigh
+            )} kcal/die`;
+
+      let targetHighlightHtml = "";
+      if (goal === "recomp") {
+        targetHighlightHtml = `
+          <div class="calorie-target-line">
+            <span class="kcal-pill kcal-rest">Giorni rest ≈ ${round(
+              targetLow
+            )} kcal</span>
+            <span class="kcal-pill kcal-training">Giorni training ≈ ${round(
+              targetHigh
+            )} kcal</span>
+          </div>
+        `;
+      } else {
+        targetHighlightHtml = `
+          <div class="calorie-target-line">
+            Target giornaliero: <span class="kcal-target">${round(
+              refKcal
+            )} kcal/die</span>
+          </div>
+        `;
+      }
+
+      calorieBlock.innerHTML = `
+        <div class="output-title">Calorie giornaliere</div>
+        ${targetHighlightHtml}
+        <div class="output-line">
+          BMR scelto: <span class="output-emph">${round(
+            baseBmr
+          )} kcal</span> • PAL: <span class="output-emph">${pal}</span>
+        </div>
+        <div class="output-line">
+          TDEE stimato: <span class="output-emph">${round(
+            tdee
+          )} kcal/die</span>
+        </div>
+        <div class="output-line">
+          ${kcalLine}
+        </div>
+        <div class="note" style="margin-top:0.3rem;">
+          ${description}
+        </div>
+      `;
+
+      // Macro: proteine alte per bulk/cut, più moderate per maintain
+      const weight = lastInputs.weight;
+      let proteinPerKg = 2.0;
+      if (goal === "maintain") proteinPerKg = 1.6;
+      if (goal === "recomp") proteinPerKg = 2.0;
+
+      const proteinG = proteinPerKg * weight;
+
+      // Grassi: 0.8–1.0 g/kg → prendo 0.9 come default
+      const fatPerKg = 0.9;
+      const fatG = fatPerKg * weight;
+
+      const kcalFromProtein = proteinG * 4;
+      const kcalFromFat = fatG * 9;
+      let kcalForCarb = refKcal - (kcalFromProtein + kcalFromFat);
+      if (kcalForCarb < 0) kcalForCarb = 0;
+      const carbG = kcalForCarb / 4;
+
+      macroBlock.innerHTML = `
+        <div class="output-title">Distribuzione macronutrienti (giornaliera)</div>
+        <div class="macro-row">
+          <div class="macro-item macro-protein" data-macro-index="0">
+            <div class="macro-label">Proteine</div>
+            <div class="macro-values">
+              <span class="macro-grams">${round(proteinG)} g</span>
+              <span class="macro-kcal">(~${round(
+                kcalFromProtein
+              )} kcal)</span>
+            </div>
+            <div class="macro-note">
+              ≈ ${proteinPerKg.toFixed(
+                1
+              )} g/kg (alta per supportare massa magra).
+            </div>
+          </div>
+
+          <div class="macro-item macro-fat" data-macro-index="1">
+            <div class="macro-label">Grassi</div>
+            <div class="macro-values">
+              <span class="macro-grams">${round(fatG)} g</span>
+              <span class="macro-kcal">(~${round(kcalFromFat)} kcal)</span>
+            </div>
+            <div class="macro-note">
+              ≈ ${fatPerKg.toFixed(
+                1
+              )} g/kg (copertura ormonale e salute generale).
+            </div>
+          </div>
+
+          <div class="macro-item macro-carb" data-macro-index="2">
+            <div class="macro-label">Carboidrati</div>
+            <div class="macro-values">
+              <span class="macro-grams">${round(carbG)} g</span>
+              <span class="macro-kcal">(~${round(kcalForCarb)} kcal)</span>
+            </div>
+            <div class="macro-note">
+              Quota flessibile per performance e aderenza.
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          Range tipico proteine 1.6–2.2 g/kg; grassi 0.8–1.0 g/kg; i carboidrati si adattano al totale calorico e alle preferenze.
+        </div>
+      `;
+
+      microBlock.innerHTML = `
+        <div class="output-title">Focus micronutrienti</div>
+        <div class="output-line">
+          • Ferro e calcio se donna in età fertile o persona anziana.
+        </div>
+        <div class="output-line">
+          • Omega‑3 (EPA/DHA): indicativamente 2–3 g/die tramite pesce grasso o integratori.
+        </div>
+        <div class="output-line">
+          • Vitamina D: adeguato apporto (spesso 2000–4000 UI/die, in base a esami ematici e parere medico).
+        </div>
+        <div class="output-line">
+          • Magnesio e zinco: utili per supportare recupero e sintesi proteica.
+        </div>
+        <div class="output-line">
+          • Equilibrio sodio/potassio, privilegiando cibi freschi, frutta e verdura.
+        </div>
+      `;
+
+      // Pannello integratori / pillole consigliate
+      supplementsBlock.innerHTML = `
+        <div class="output-title">Suggerimenti integrazione (pillole)</div>
+        <div class="output-line">
+          Lista indicativa da adattare con il tuo medico o nutrizionista.
+        </div>
+        <div class="supplement-item">
+          <div class="supplement-name">Magnesio</div>
+          <div>
+            Utile per rilassamento muscolare, qualità del sonno e gestione di crampi o tensioni.
+            Momento migliore: sera, insieme o dopo cena, per favorire il recupero notturno.
+          </div>
+        </div>
+        <div class="supplement-item">
+          <div class="supplement-name">Omega‑3 (EPA/DHA)</div>
+          <div>
+            Supporta salute cardiovascolare, gestione dell’infiammazione e recupero.
+            Momento migliore: durante i pasti principali (es. pranzo/cena), soprattutto se il pasto contiene grassi.
+          </div>
+        </div>
+        <div class="supplement-item">
+          <div class="supplement-name">Vitamina D</div>
+          <div>
+            Spesso carente, importante per sistema immunitario, ossa e performance.
+            Momento migliore: mattina o pranzo, con un pasto che contenga grassi per migliorarne l’assorbimento.
+          </div>
+        </div>
+        <div class="supplement-item">
+          <div class="supplement-name">Multivitaminico</div>
+          <div>
+            Può aiutare a coprire eventuali carenze di base (soprattutto se la dieta è poco varia).
+            Momento migliore: colazione o pranzo, una volta al giorno.
+          </div>
+        </div>
+        <div class="supplement-item">
+          <div class="supplement-name">Creatina monoidrato</div>
+          <div>
+            Supporta forza, potenza e recupero negli sport di resistenza alla forza.
+            Momento migliore: in qualsiasi momento della giornata, preferibilmente ogni giorno alla stessa ora (es. dopo l’allenamento o a pranzo).
+          </div>
+        </div>
+        <div class="supplement-item">
+          <div class="supplement-name">Probiotici / fibre</div>
+          <div>
+            Utili per salute intestinale, digestione e regolarità.
+            Momento migliore: secondo indicazioni del prodotto, spesso al mattino lontano dai pasti o insieme a un pasto leggero.
+          </div>
+        </div>
+      `;
+      supplementsBlock.style.display = "block";
+
+      // Allenamento consigliato + settimana tipo Lun/Mar/Gio/Ven
+      const baseAdvice = trainingAdvice(goal);
+      let goalNote = "";
+      switch (goal) {
+        case "bulk":
+          goalNote =
+            "In fase di aumento massa, punta a progressione graduale dei carichi mantenendo una buona tecnica.";
+          break;
+        case "cut":
+          goalNote =
+            "In fase di definizione, mantieni i carichi il più possibile stabili per preservare forza e massa muscolare.";
+          break;
+        case "maintain":
+          goalNote =
+            "In mantenimento, concentra il focus su tecnica, mobilità e costanza nel volume settimanale.";
+          break;
+        case "recomp":
+          goalNote =
+            "Per la ricomposizione, alterna settimane con enfasi su volume e su intensità, rispettando i tempi di recupero.";
+          break;
+        default:
+          goalNote =
+            "Adatta volumi e intensità al tuo livello di esperienza e al recupero disponibile.";
+      }
+
+      // Range indicativi per multiarticolari
+      const upperRange = getRecommendedWeightRange("upper");
+      const lowerRange = getRecommendedWeightRange("lower");
+      const lowerHeavyRange = getRecommendedWeightRange("lowerHeavy");
+
+      trainingBlock.innerHTML = `
+        <div class="output-line">${baseAdvice}</div>
+        <div class="training-intro-note">
+          Esempio di settimana tipo a 4 giorni: organizza il lavoro su spinta (push), tirata (pull), gambe e full body. Puoi ruotare gli esercizi mantenendo la struttura di base.
+        </div>
+        <div class="training-week">
+          <div class="output-title" style="margin-top:0.4rem;">
+            Allenamento consigliato – settimana tipo (4 giorni)
+          </div>
+
+          <div class="training-day" data-day="lunedi">
+            <div class="training-day-header">Lunedì – Push (petto/spalle/tricipiti)</div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=panca+piana+bilanciere+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Panca piana con bilanciere
+                </a>
+              </div>
+              <div class="exercise-meta">3–4 serie × 6–10 ripetizioni</div>
+              <div class="exercise-description">
+                Sdraiato sulla panca, piedi ben stabili e scapole addotte; porta il bilanciere al petto controllando la discesa, poi spingi verso l’alto senza perdere l’assetto.
+              </div>
+              <div class="exercise-weight-hint">
+                Peso consigliato (indicativo): ${upperRange.min}–${
+                  upperRange.max
+                } kg. Parti dal limite più basso se sei alle prime armi e concentrati sulla tecnica.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=military+press+bilanciere+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Military press / Shoulder press
+                </a>
+              </div>
+              <div class="exercise-meta">3–4 serie × 6–10 ripetizioni</div>
+              <div class="exercise-description">
+                In piedi o seduto, mantieni core attivo e glutei contratti; spingi il bilanciere o i manubri sopra la testa senza inarcare eccessivamente la zona lombare.
+              </div>
+              <div class="exercise-weight-hint">
+                Peso consigliato (indicativo): ${upperRange.min}–${
+                  upperRange.max
+                } kg. Se senti instabilità, riduci il carico e cura il controllo del movimento.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=dip+parallele+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Dip alle parallele o piegamenti
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 8–12 ripetizioni</div>
+              <div class="exercise-description">
+                Controlla la discesa fino a sentire il petto o i tricipiti in allungamento, poi spingi forte verso l’alto evitando rimbalzi o movimenti a strappo.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=alzate+laterali+manubri+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Alzate laterali
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 12–15 ripetizioni</div>
+              <div class="exercise-description">
+                Leggera flessione dei gomiti, solleva i manubri fino circa all’altezza delle spalle senza slanci di tronco, concentrandoti sul lavoro del deltoide laterale.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=estensioni+tricipiti+manubrio+o+cavo+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Estensioni tricipiti (cavo/manubrio)
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 10–15 ripetizioni</div>
+              <div class="exercise-description">
+                Mantieni i gomiti fermi vicino al corpo o sopra la testa e stendi l’avambraccio controllando il ritorno, evitando di oscillare con spalle e busto.
+              </div>
+            </div>
+          </div>
+
+          <div class="training-day" data-day="martedi">
+            <div class="training-day-header">Martedì – Pull (schiena/bicipiti)</div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=trazioni+sbarra+lat+machine+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Trazioni alla sbarra / Lat machine
+                </a>
+              </div>
+              <div class="exercise-meta">3–4 serie × 6–10 ripetizioni</div>
+              <div class="exercise-description">
+                Parti con scapole depresse e addotte, tira portando il petto verso la sbarra/cavo e controlla la discesa senza “cadere” nel punto basso.
+              </div>
+              <div class="exercise-weight-hint">
+                Se lavori alla lat machine: peso consigliato (indicativo) ${
+                  upperRange.min
+                }–${upperRange.max} kg. Sulle trazioni a corpo libero, usa eventualmente una banda elastica o un piccolo sovraccarico solo quando la tecnica è stabile.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=rematore+bilanciere+manubri+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Rematore con bilanciere o manubri
+                </a>
+              </div>
+              <div class="exercise-meta">3–4 serie × 6–10 ripetizioni</div>
+              <div class="exercise-description">
+                Schiena neutra, busto inclinato in avanti, tira il carico verso l’addome senza “strappare” e mantieni il core attivo per proteggere la zona lombare.
+              </div>
+              <div class="exercise-weight-hint">
+                Peso consigliato (indicativo): ${upperRange.min}–${
+                  upperRange.max
+                } kg. Scegli un carico che ti permetta di non perdere la posizione della schiena.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=pulley+rematore+macchina+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Pulley / rematore alla macchina
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 8–12 ripetizioni</div>
+              <div class="exercise-description">
+                Tronco stabile, petto aperto, tira la maniglia verso l’ombelico stringendo le scapole dietro; evita di oscillare in avanti e indietro.
+              </div>
+              <div class="exercise-weight-hint">
+                Peso consigliato (indicativo): ${upperRange.min}–${
+                  upperRange.max
+                } kg sulla macchina, adattando in base alla percezione di controllo e al range di ripetizioni.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=curl+bilanciere+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Curl con bilanciere
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 8–12 ripetizioni</div>
+              <div class="exercise-description">
+                Gomiti fermi vicino al busto, solleva il bilanciere controllando la salita e la discesa, senza usare troppo slancio con la schiena.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=curl+manubri+hammer+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Curl con manubri (alternato o hammer)
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 10–15 ripetizioni</div>
+              <div class="exercise-description">
+                Mantieni polsi neutri e gomiti stabili; esegui il movimento in modo fluido alternando le braccia o in presa neutra per coinvolgere maggiormente il brachioradiale.
+              </div>
+            </div>
+          </div>
+
+          <div class="training-day" data-day="giovedi">
+            <div class="training-day-header">Giovedì – Gambe (lower)</div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=squat+bilanciere+o+pressa+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Squat con bilanciere / Pressa
+                </a>
+              </div>
+              <div class="exercise-meta">3–4 serie × 6–10 ripetizioni</div>
+              <div class="exercise-description">
+                Piedi ben piantati, schiena neutra, scendi controllando il movimento fin dove la mobilità lo consente, poi risali spingendo attraverso il centro del piede.
+              </div>
+              <div class="exercise-weight-hint">
+                Peso consigliato (indicativo): ${lowerRange.min}–${
+                  lowerRange.max
+                } kg. Se lavori a corpo libero o con carichi molto leggeri, concentrati sul controllo della profondità e sulla stabilità del ginocchio.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=affondi+camminati+o+sul+posto+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Affondi (camminati o sul posto)
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 8–12 ripetizioni per gamba</div>
+              <div class="exercise-description">
+                Passo lungo ma stabile, ginocchio anteriore in linea con il piede, scendi in verticale senza chiudere il ginocchio verso l’interno.
+              </div>
+              <div class="exercise-weight-hint">
+                Per affondi con manubri: peso consigliato (indicativo) per mano ${
+                  lowerRange.min
+                }–${lowerRange.max} kg, riducendo se perdi equilibrio o controllo.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=stacchi+rumeni+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Stacchi rumeni
+                </a>
+              </div>
+              <div class="exercise-meta">3–4 serie × 8–12 ripetizioni</div>
+              <div class="exercise-description">
+                Leggera flessione delle ginocchia, spingi il bacino indietro mantenendo schiena neutra; senti l’allungamento dei femorali e risali contraendo glutei e posteriori.
+              </div>
+              <div class="exercise-weight-hint">
+                Peso consigliato (indicativo): ${lowerHeavyRange.min}–${
+                  lowerHeavyRange.max
+                } kg. Mantieni sempre prioritaria la protezione della zona lombare.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=leg+curl+macchina+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Leg curl
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 10–15 ripetizioni</div>
+              <div class="exercise-description">
+                Focalizzati sulla contrazione dei femorali, evita di compensare con la zona lombare e controlla il ritorno del peso.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=polpacci+standing+o+seduto+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Polpacci (standing o seduto)
+                </a>
+              </div>
+              <div class="exercise-meta">3–4 serie × 12–20 ripetizioni</div>
+              <div class="exercise-description">
+                Spingi in alto sulle punte con controllo, fai una breve pausa in contrazione e scendi lasciando allungare il polpaccio senza rimbalzare.
+              </div>
+            </div>
+          </div>
+
+          <div class="training-day" data-day="venerdi">
+            <div class="training-day-header">Venerdì – Full body</div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=squat+o+stacco+variante+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Squat o stacco (variante tollerata)
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 5–8 ripetizioni</div>
+              <div class="exercise-description">
+                Esegui un multiarticolare pesante per parte inferiore, mantenendo tecnica solida e rispettando il range di movimento sicuro per le tue articolazioni.
+              </div>
+              <div class="exercise-weight-hint">
+                Peso consigliato (indicativo): ${lowerHeavyRange.min}–${
+                  lowerHeavyRange.max
+                } kg. Mantieni sempre 1–3 ripetizioni in riserva, soprattutto se l’esercizio è impegnativo per la schiena.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=panca+piana+o+inclinata+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Panca piana o inclinata
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 6–10 ripetizioni</div>
+              <div class="exercise-description">
+                Come nel giorno push, focalizzati su traiettoria controllata e scapole stabili; puoi usare la variante inclinata per enfatizzare il petto alto.
+              </div>
+              <div class="exercise-weight-hint">
+                Peso consigliato (indicativo): ${upperRange.min}–${
+                  upperRange.max
+                } kg. Se alterni panca piana e inclinata, mantieni un carico gestibile su entrambe.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=trazioni+o+rematore+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Trazioni o rematore
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 6–10 ripetizioni</div>
+              <div class="exercise-description">
+                Scegli il movimento di tirata che senti meglio sulla schiena e mantieni un buon controllo, evitando di compensare troppo con i bicipiti.
+              </div>
+              <div class="exercise-weight-hint">
+                Sulla variante con carico esterno (lat machine o rematore): peso consigliato (indicativo) ${
+                  upperRange.min
+                }–${upperRange.max} kg, modulando in base alla percezione di fatica.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=shoulder+press+o+alzate+spalle+esecuzione+corretta" target="_blank" rel="noopener noreferrer">
+                  Esercizio spalle (press o alzate)
+                </a>
+              </div>
+              <div class="exercise-meta">3 serie × 10–15 ripetizioni</div>
+              <div class="exercise-description">
+                Usa un carico che ti permette di mantenere traiettoria pulita e controllo; evita di spingere oltre il tuo range di mobilità articolare.
+              </div>
+            </div>
+
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-animated-icon"></span>
+                <a href="https://www.youtube.com/results?search_query=plank+anti+rotazione+crunch+esercizi+core" target="_blank" rel="noopener noreferrer">
+                  Core (plank, anti-rotazione, crunch)
+                </a>
+              </div>
+              <div class="exercise-meta">3–4 serie da 20–40 secondi o 12–20 ripetizioni</div>
+              <div class="exercise-description">
+                Mantieni il bacino neutro e il respiro controllato; evita di “collassare” con la zona lombare o di tirare il collo durante i crunch.
+              </div>
+            </div>
+          </div>
+
+          <div class="note" style="margin-top:0.4rem;">
+            • In generale, mantieni 1–3 ripetizioni in riserva (RPE ~7–9) sui set principali e aumenta gradualmente i carichi nel tempo quando completi il range alto di ripetizioni.<br/>
+            • ${goalNote}
+          </div>
+        </div>
+      `;
+
+      // Salva dati piano per dieta settimanale
+      lastPlan = {
+        tdee,
+        targetLow,
+        targetHigh,
+        refKcal,
+        proteinG,
+        fatG,
+        carbG,
+        goal
+      };
+
+      // Aggiorna grafico macro
+      const ctx = document.getElementById("macroChart").getContext("2d");
+      if (currentMacroChart) currentMacroChart.destroy();
+      currentMacroChart = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: ["Proteine (kcal)", "Grassi (kcal)", "Carboidrati (kcal)"],
+          datasets: [
+            {
+              data: [kcalFromProtein, kcalFromFat, kcalForCarb],
+              backgroundColor: macroBaseColors.slice(),
+              borderColor: "#020617",
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          plugins: {
+            legend: {
+              labels: { color: "#e5e7eb", font: { size: 11 } }
+            }
+          }
+        }
+      });
+
+      outputCard.style.display = "block";
+      dietExampleBlock.style.display = "none";
+      dietExampleBlock.innerHTML = "";
+      if (dietExampleTitle) {
+        dietExampleTitle.style.display = "none";
+      }
+      if (dietDayFilterContainer) {
+        dietDayFilterContainer.style.display = "none";
+      }
+
+      // Collega hover testo macro ↔ grafico
+      setupMacroHover();
+
+      // All'avvio del piano, mostra tutti i giorni allenamento
+      updateTrainingDayVisibility();
+
+      // Scroll al piano su mobile
+      outputCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // --- Genera esempio di dieta settimanale (settimana tipo con grammi)
+    generateDietBtn.addEventListener("click", () => {
+      if (!lastPlan) {
+        alert(
+          "Prima genera il piano giornaliero compilando i dati e scegliendo un obiettivo."
+        );
+        return;
+      }
+
+      const mealStructure = document.getElementById("mealStructure").value;
+      const breakfastType = document.getElementById("breakfastType").value;
+      const cookingTime = document.getElementById("cookingTime").value;
+      const budget = document.getElementById("budget").value;
+      const dislikedFoods = document
+        .getElementById("dislikedFoods")
+        .value.trim();
+      const trainingTime = document.getElementById("trainingTime").value;
+      const trainingDays = document.getElementById("trainingDays").value;
+      const dietOtherText = document
+        .getElementById("dietOtherText")
+        .value.trim();
+
+      const dietPrefs = Array.from(
+        document.querySelectorAll(".dietPref:checked")
+      ).map((cb) => cb.value);
+
+      // Determina profilo alimentare
+      let profile = "onnivoro";
+      if (dietPrefs.includes("vegano")) {
+        profile = "vegano";
+      } else if (dietPrefs.includes("vegetariano")) {
+        profile = "vegetariano";
+      }
+
+      const { tdee, proteinG, fatG, carbG, goal } = lastPlan;
+
+      // scale per adattare le grammature alla quota macro giornaliera
+      const proteinScale = clamp(proteinG / 140, 0.7, 1.5);
+      const carbScale = clamp(carbG / 180, 0.6, 1.5);
+      const fatScale = clamp(fatG / 60, 0.6, 1.4);
+
+      // Colazione base ad alto contenuto proteico
+      let colazioneDescr = "";
+      if (profile === "vegano") {
+        colazioneDescr =
+          `Drink vegetale di soia/avena 250 ml, fiocchi d’avena ${round(
+            40 * carbScale
+          )} g, banana 120 g, semi di chia 10 g, proteine in polvere vegetali 30 g.`;
+      } else if (profile === "vegetariano") {
+        colazioneDescr =
+          `Fiocchi di latte ${round(
+            170 * proteinScale
+          )} g, fiocchi d’avena ${round(
+            35 * carbScale
+          )} g, frutti di bosco 80 g, mandorle 15 g.`;
+      } else {
+        colazioneDescr =
+          `Fiocchi di latte ${round(
+            170 * proteinScale
+          )} g, fiocchi d’avena ${round(
+            35 * carbScale
+          )} g, 1 uovo intero + albume ${round(
+            80 * proteinScale
+          )} g, frutta (mela o banana) 150 g.`;
+      }
+
+      if (breakfastType === "caffe") {
+        colazioneDescr =
+          "Caffè (senza calorie significative) + suggerito: shake proteico con 30 g proteine in polvere e, se tollerato, fiocchi di latte 150 g per migliorare sazietà e gestione della fame.";
+      } else if (breakfastType === "abbondante") {
+        colazioneDescr +=
+          ` A colazione puoi spostare una quota extra di carboidrati (es. +${round(
+            15 * carbScale
+          )} g di fiocchi d’avena o 1 fetta di pane integrale 30 g).`;
+      }
+
+      // Helper per descrivere fonti proteiche principali in base al profilo
+      function dayBlock(title, isHigherCarb = false, dayKey = "") {
+        // Pranzo/cena onnivoro per ogni giorno con alimenti specifici
+        let pranzoOnnivoro = "";
+        let cenaOnnivoro = "";
+
+        const basePasta = isHigherCarb ? 70 : 60;
+        const baseOlio = isHigherCarb ? 6 : 5;
+
+        switch (dayKey) {
+          case "lunedi":
+            pranzoOnnivoro = `
+              Petto di pollo ${round(
+                180 * proteinScale
+              )} g,
+              pasta integrale ${round(
+                basePasta * carbScale
+              )} g (peso a crudo),
+              broccoli 200 g,
+              carote 100 g,
+              olio extravergine d’oliva ${round(baseOlio * fatScale)} ml.
+            `;
+            cenaOnnivoro = `
+              Salmone ${round(
+                150 * proteinScale
+              )} g,
+              zucca al forno 200 g,
+              insalata 100 g,
+              cetrioli 80 g,
+              olio extravergine d’oliva ${round(5 * fatScale)} ml.
+            `;
+            break;
+          case "martedi":
+            pranzoOnnivoro = `
+              Macinata di vitello magra ${round(
+                170 * proteinScale
+              )} g,
+              pasta integrale ${round(
+                basePasta * carbScale
+              )} g (peso a crudo),
+              zucchine 180 g,
+              peperoni 150 g,
+              olio extravergine d’oliva ${round(baseOlio * fatScale)} ml.
+            `;
+            cenaOnnivoro = `
+              Orata ${round(
+                160 * proteinScale
+              )} g,
+              patate al forno ${round(120 * carbScale)} g,
+              insalata 80 g,
+              carote 80 g,
+              olio extravergine d’oliva ${round(5 * fatScale)} ml.
+            `;
+            break;
+          case "giovedi":
+            pranzoOnnivoro = `
+              Frittata con 2 uova intere + albume ${round(
+                120 * proteinScale
+              )} g,
+              pasta integrale ${round(
+                60 * carbScale
+              )} g (peso a crudo),
+              peperoni 120 g,
+              zucchine 150 g,
+              olio extravergine d’oliva ${round(baseOlio * fatScale)} ml.
+            `;
+            cenaOnnivoro = `
+              Branzino ${round(
+                160 * proteinScale
+              )} g,
+              broccoli 200 g,
+              zucca 150 g,
+              pane integrale ${round(40 * carbScale)} g,
+              olio extravergine d’oliva ${round(5 * fatScale)} ml.
+            `;
+            break;
+          default:
+            // venerdì
+            pranzoOnnivoro = `
+              Lenticchie cotte ${round(
+                160 * proteinScale
+              )} g,
+              ceci cotti ${round(80 * proteinScale)} g,
+              pasta integrale ${round(
+                60 * carbScale
+              )} g (peso a crudo),
+              insalata 100 g,
+              cetrioli 80 g,
+              carote 80 g,
+              olio extravergine d’oliva ${round(baseOlio * fatScale)} ml.
+            `;
+            cenaOnnivoro = `
+              Fiocchi di latte ${round(
+                200 * proteinScale
+              )} g,
+              fagioli borlotti cotti ${round(80 * proteinScale)} g,
+              pane integrale ${round(50 * carbScale)} g,
+              insalata 80 g,
+              peperoni 80 g,
+              olio extravergine d’oliva ${round(5 * fatScale)} ml.
+            `;
+            break;
+        }
+
+        // Versioni vegetariane/vegane ad alto contenuto proteico
+        const pranzoBaseVegetariano = `
+          Fiocchi di latte ${round(
+            200 * proteinScale
+          )} g,
+          pasta integrale ${round(
+            basePasta * carbScale
+          )} g (peso a crudo),
+          broccoli 180 g,
+          carote 80 g,
+          zucchine 120 g,
+          olio extravergine d’oliva ${round(baseOlio * fatScale)} ml.
+        `;
+        const pranzoBaseVegano = `
+          Lenticchie cotte ${round(
+            180 * proteinScale
+          )} g,
+          ceci cotti ${round(80 * proteinScale)} g,
+          pasta integrale ${round(
+            basePasta * carbScale
+          )} g (peso a crudo),
+          peperoni 150 g,
+          insalata 100 g,
+          olio extravergine d’oliva ${round(baseOlio * fatScale)} ml.
+        `;
+
+        const cenaVegetariano = `
+          Frittata con 2 uova intere + albume ${round(
+            120 * proteinScale
+          )} g,
+          verdure miste: zucchine 150 g, peperoni 100 g, carote 80 g,
+          pane integrale ${round(40 * carbScale)} g,
+          olio extravergine d’oliva ${round(5 * fatScale)} ml.
+        `;
+        const cenaVegano = `
+          Mix legumi (ceci/fagioli/lenticchie) cotti ${round(
+            200 * proteinScale
+          )} g,
+          zucca al forno 200 g,
+          insalata 100 g,
+          olio extravergine d’oliva ${round(5 * fatScale)} ml.
+        `;
+
+        const pranzoScelto =
+          profile === "onnivoro"
+            ? pranzoOnnivoro
+            : profile === "vegetariano"
+            ? pranzoBaseVegetariano
+            : pranzoBaseVegano;
+
+        const cenaScelta =
+          profile === "onnivoro"
+            ? cenaOnnivoro
+            : profile === "vegetariano"
+            ? cenaVegetariano
+            : cenaVegano;
+
+        // Spuntino proteico con proteine in polvere / fiocchi di latte / legumi
+        let spuntino = "";
+        if (profile === "vegano") {
+          spuntino =
+            "Shake proteico con 30 g proteine in polvere vegetali, ceci croccanti 30 g, carote crude 80 g.";
+        } else if (profile === "vegetariano") {
+          spuntino =
+            `Fiocchi di latte ${round(
+              150 * proteinScale
+            )} g + 30 g proteine in polvere, cetrioli 80 g.`;
+        } else {
+          spuntino =
+            `Shake proteico con 30 g proteine in polvere, fiocchi di latte ${round(
+              120 * proteinScale
+            )} g e 1 uovo sodo.`;
+        }
+
+        let pastiHtml = "";
+        if (mealStructure === "2") {
+          pastiHtml = `
+            <div class="diet-meal-title">Pasto 1 (metà giornata)</div>
+            <div class="diet-food">${colazioneDescr} ${spuntino}</div>
+            <div class="diet-meal-title">Pasto 2 (sera)</div>
+            <div class="diet-food">${pranzoScelto} ${cenaScelta}</div>
+          `;
+        } else if (mealStructure === "4plus") {
+          pastiHtml = `
+            <div class="diet-meal-title">Colazione</div>
+            <div class="diet-food">${colazioneDescr}</div>
+            <div class="diet-meal-title">Spuntino</div>
+            <div class="diet-food">${spuntino}</div>
+            <div class="diet-meal-title">Pranzo</
+                        <div class="diet-meal-title">Pranzo</div>
+            <div class="diet-food">${pranzoScelto}</div>
+            <div class="diet-meal-title">Cena</div>
+            <div class="diet-food">${cenaScelta}</div>
+          `;
+        } else {
+          // 3 pasti
+          pastiHtml = `
+            <div class="diet-meal-title">Colazione</div>
+            <div class="diet-food">${colazioneDescr}</div>
+            <div class="diet-meal-title">Pranzo</div>
+            <div class="diet-food">${pranzoScelto}</div>
+            <div class="diet-meal-title">Cena</div>
+            <div class="diet-food">${cenaScelta}</div>
+          `;
+        }
+
+        return `
+          <div class="diet-day" data-day="${dayKey}">
+            <div class="diet-day-title">${title}</div>
+            ${pastiHtml}
+          </div>
+        `;
+      }
+
+      let budgetText =
+        budget === "contenuto"
+          ? "Hai indicato un budget contenuto: privilegia alimenti base come riso e pasta integrale, uova, legumi secchi, petto di pollo, fiocchi di latte, verdure di stagione e surgelate."
+          : "Sei flessibile sul budget: puoi inserire più spesso pesce di qualità (es. salmone, orata, branzino), carni magre selezionate e prodotti freschi vari (fiocchi di latte, yogurt ad alto tenore proteico, legumi pronti).";
+
+      let trainingText =
+        trainingTime === "mattina"
+          ? "Allenandoti al mattino, concentra una buona quota di carboidrati tra colazione e pranzo, mantenendo proteine distribuite in tutti i pasti."
+          : trainingTime === "pomeriggio"
+          ? "Allenandoti nel pomeriggio, lascia una parte dei carboidrati per il pranzo e per uno spuntino o una cena leggermente più ricchi di carboidrati."
+          : trainingTime === "sera"
+          ? "Allenandoti alla sera, distribuisci carboidrati tra pranzo e cena per supportare performance e recupero, mantenendo comunque proteine elevate in tutti i pasti."
+          : "Visto che l’orario di allenamento varia, mantieni una distribuzione relativamente uniforme dei carboidrati durante la giornata, con proteine costanti a ogni pasto.";
+
+      let dislikedText = "";
+      if (dislikedFoods) {
+        dislikedText = `
+          <div class="output-line">
+            • Evita o sostituisci questi alimenti in tutto lo schema: ${dislikedFoods}.
+          </div>
+        `;
+      }
+
+      let otherIntolText = "";
+      if (dietOtherText) {
+        otherIntolText = `
+          <div class="output-line">
+            • Intolleranze/allergie segnalate: ${dietOtherText}. Sostituisci gli alimenti problematici con alternative equivalenti per funzione nutrizionale (es. altra fonte proteica magra, altro cereale integrale, altra verdura a parità di quantità).
+          </div>
+        `;
+      }
+
+      const micronutrientNote = `
+        <div class="note" style="margin-top:0.4rem;">
+          <strong>Micronutrienti e integrazione (esempio generale):</strong><br/>
+          • Omega‑3: es. salmone 150 g 1–2 volte a settimana o integrazione con ~2–3 g/die di EPA/DHA se il consumo di pesce grasso è basso.<br/>
+          • Vitamina D: spesso utile integrazione (esempio 2000–4000 UI/die) sulla base di esami ematici e parere medico.<br/>
+          • Magnesio e zinco: presenti in frutta secca (15–20 g al giorno), cacao amaro, legumi (almeno 150 g cotti in 2–3 giorni a settimana) e cereali integrali come pasta integrale e pane integrale.<br/>
+          • Ferro e calcio: legumi, verdure a foglia verde, latticini (fiocchi di latte, yogurt ad alto contenuto proteico) o alternative vegetali fortificate; abbina vitamina C (es. frutta o verdure crude) per migliorare l’assorbimento del ferro vegetale.<br/>
+          • Equilibrio sodio/potassio: privilegia cibi freschi, frutta e verdura specifiche (insalata, zucchine, carote, zucca, peperoni, cetrioli, broccoli), limitando prodotti molto salati e ultra-processati.
+        </div>
+      `;
+
+      const settimanaHtml = `
+        <div class="output-title">Esempio di dieta settimanale – settimana tipo</div>
+        <div class="output-line">
+          Apporto indicativo: circa ${round(
+            tdee
+          )} kcal/die, con ~${round(proteinG)} g proteine, ~${round(
+        fatG
+      )} g grassi, ~${round(
+        carbG
+      )} g carboidrati, adattati al tuo obiettivo (“${goal}”).
+        </div>
+        <div class="output-line">
+          Considera queste giornate tipo come base ad alto contenuto proteico: regola le porzioni per rientrare nei tuoi macro giornalieri e nelle tue preferenze.
+        </div>
+
+        ${dayBlock(
+          "Lunedì – giornata tipo (alto apporto proteico, petto di pollo e salmone)",
+          true,
+          "lunedi"
+        )}
+        ${dayBlock(
+          "Martedì – giornata tipo (alto apporto proteico, vitello magro e orata)",
+          true,
+          "martedi"
+        )}
+        ${dayBlock(
+          "Giovedì – giornata tipo (uova/albume e branzino, verdure specifiche)",
+          true,
+          "giovedi"
+        )}
+        ${dayBlock(
+          "Venerdì – giornata tipo (legumi, fiocchi di latte e fagioli)",
+          true,
+          "venerdi"
+        )}
+
+        <div class="output-title" style="margin-top:0.8rem;">Note pratiche</div>
+        <div class="output-line">
+          • Giorni di allenamento indicati: ${trainingDays} a settimana. ${trainingText}
+        </div>
+        <div class="output-line">
+          • ${budgetText}
+        </div>
+        ${dislikedText}
+        ${otherIntolText}
+        ${micronutrientNote}
+      `;
+
+      dietExampleBlock.innerHTML = settimanaHtml;
+      dietExampleBlock.style.display = "block";
+      if (dietExampleTitle) {
+        dietExampleTitle.style.display = "block";
+      }
+      if (dietDayFilterContainer) {
+        dietDayFilterContainer.style.display = "flex";
+      }
+      if (dietDayFilter) {
+        dietDayFilter.value = "all";
+      }
+      updateDietDayVisibility();
+
+      dietExampleBlock.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // --- Bozza export "PDF" (usa semplicemente print)
+    exportPdfBtn.addEventListener("click", () => {
+      alert(
+        "Questo è un prototipo: per un vero PDF integra librerie come jsPDF o genera un report server-side.\nOra verrà aperta la stampa del browser."
+      );
+      window.print();
+    });
+
+    // --- Filtri giorno allenamento/dieta
+    function updateTrainingDayVisibility() {
+      const select = document.getElementById("trainingDayFilter");
+      if (!select) return;
+      const value = select.value;
+      const days = document.querySelectorAll(".training-day");
+      days.forEach((day) => {
+        if (value === "all" || day.dataset.day === value) {
+          day.style.display = "";
+        } else {
+          day.style.display = "none";
+        }
+      });
+    }
+
+    function updateDietDayVisibility() {
+      const select = document.getElementById("dietDayFilter");
+      if (!select) return;
+      const value = select.value;
+      const days = document.querySelectorAll("#dietExampleBlock .diet-day");
+      days.forEach((day) => {
+        if (value === "all" || day.dataset.day === value) {
+          day.style.display = "";
+        } else {
+          day.style.display = "none";
+        }
+      });
+    }
+
+    if (trainingDayFilter) {
+      trainingDayFilter.addEventListener("change", updateTrainingDayVisibility);
+    }
+    if (dietDayFilter) {
+      dietDayFilter.addEventListener("change", updateDietDayVisibility);
+    }
+
+    // --- Navigazione mobile tipo app (tab in basso)
+    const mobileNavBtns = document.querySelectorAll(".mobile-nav-btn");
+    mobileNavBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.target;
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+
